@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Format Changer - Browser Only CSV Sanitizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .step {
+            margin-bottom: 40px;
+            padding: 30px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .step.active {
+            border-color: #4facfe;
+            background: #f8fbff;
+        }
+
+        .step.completed {
+            border-color: #00c851;
+            background: #f8fff9;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e0e6ed;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .step.active .step-number {
+            background: #4facfe;
+            color: white;
+        }
+
+        .step.completed .step-number {
+            background: #00c851;
+            color: white;
+        }
+
+        .step-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .step-description {
+            margin-bottom: 20px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .input-options {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .file-upload input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-upload-btn {
+            display: block;
+            padding: 15px 25px;
+            background: #4facfe;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .file-upload-btn:hover {
+            background: #3d8bfe;
+        }
+
+        .sample-btn {
+            padding: 15px 25px;
+            background: #6c5ce7;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .sample-btn:hover {
+            background: #5a4bd1;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f1f3f4;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .scan-summary {
+            margin-top: 20px;
+        }
+
+        .issue-category {
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            background: #f8f9fa;
+        }
+
+        .issue-category h4 {
+            margin-bottom: 8px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .issue-count {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .count-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .count-ok {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .issue-detail {
+            font-size: 0.9em;
+            color: #666;
+            margin-left: 5px;
+        }
+
+        .column-card {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .column-card.committed {
+            border-color: #00c851;
+            background: #f8fff9;
+        }
+
+        .column-card.skipped {
+            border-color: #6c757d;
+            background: #f8f9fa;
+            opacity: 0.7;
+        }
+
+        .column-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dee2e6;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .column-name {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .column-badges {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-date { background: #e8daef; color: #6c3483; }
+        .badge-number { background: #d4efdf; color: #1e8449; }
+        .badge-text { background: #d6eaf8; color: #2471a3; }
+        .badge-pending { background: #fdebd0; color: #d68910; }
+        .badge-fixed { background: #d5f5e3; color: #1e8449; }
+        .badge-skipped { background: #e5e8e8; color: #566573; }
+
+        .issue-list {
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        .issue-list li {
+            margin-bottom: 4px;
+            color: #555;
+            list-style: none;
+            padding-left: 15px;
+            position: relative;
+        }
+
+        .issue-list li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 7px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #ffc107;
+        }
+
+        .fix-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .fix-select {
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 0.95em;
+            min-width: 200px;
+            background: white;
+        }
+
+        .fix-param {
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 0.95em;
+            min-width: 160px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-commit {
+            background: #00c851;
+            color: white;
+        }
+
+        .btn-skip {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-undo {
+            background: #ffc107;
+            color: #333;
+            font-size: 0.85em;
+            padding: 6px 14px;
+        }
+
+        .btn-primary {
+            background: #4facfe;
+            color: white;
+        }
+
+        .btn-success {
+            background: #00c851;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .preview-panel {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .preview-label {
+            background: #343a40;
+            color: white;
+            padding: 8px 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .preview-label.after {
+            background: #1e8449;
+        }
+
+        .preview-scroll {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .preview-scroll table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8em;
+            font-family: 'Courier New', monospace;
+        }
+
+        .preview-scroll th {
+            background: #f8f9fa;
+            padding: 6px 8px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+            position: sticky;
+            top: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 0.95em;
+        }
+
+        .preview-scroll td {
+            padding: 5px 8px;
+            border-bottom: 1px solid #f0f0f0;
+            word-break: break-all;
+        }
+
+        .preview-scroll tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        .changed-cell {
+            background: #d5f5e3;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .display-table-container {
+            display: none;
+            margin-top: 20px;
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+
+        .display-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+        }
+
+        .display-table th {
+            background: #343a40;
+            color: white;
+            padding: 10px 12px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        .display-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #dee2e6;
+            white-space: nowrap;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .display-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .display-table tr:hover {
+            background: #e9ecef;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        .progress-bar-container {
+            display: none;
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .container { margin: 10px; }
+            .content { padding: 20px; }
+            .header { padding: 20px; }
+            .header h1 { font-size: 2em; }
+            .preview-grid { grid-template-columns: 1fr; }
+            .fix-controls { flex-direction: column; align-items: stretch; }
+            .fix-select, .fix-param { min-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Export Format Changer</h1>
+            <p>Browser Only CSV Sanitizer &mdash; Detect and fix compatibility issues for Excel, Access, and database imports</p>
+        </div>
+
+        <div class="content">
+            <!-- Step 1: Load -->
+            <div class="step active" id="step1">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Load CSV</div>
+                </div>
+                <p class="step-description">
+                    Upload a CSV file to scan for compatibility issues, or generate sample blockchain data to see the tool in action.
+                </p>
+                <div class="input-options">
+                    <div class="file-upload">
+                        <input type="file" id="csvFile" accept=".csv" data-testid="input-csv-file" />
+                        <label for="csvFile" class="file-upload-btn" data-testid="button-upload-csv">
+                            Upload CSV File
+                        </label>
+                    </div>
+                    <button class="sample-btn" onclick="loadSampleData()" data-testid="button-sample-data">
+                        Generate Sample Data
+                    </button>
+                </div>
+                <div class="file-info" id="fileInfo" style="display: none;" data-testid="text-file-info"></div>
+            </div>
+
+            <!-- Step 2: Scan Results -->
+            <div class="step" id="step2">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Scan Results</div>
+                </div>
+                <div id="scanSummary" class="scan-summary"></div>
+            </div>
+
+            <!-- Step 3: Fix Columns -->
+            <div class="step" id="step3">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Fix Columns</div>
+                </div>
+                <p class="step-description" id="fixDescription" style="display:none;">
+                    Review each flagged column below. Choose a fix, preview the changes, then commit or skip.
+                </p>
+                <div id="columnCards"></div>
+            </div>
+
+            <!-- Step 4: Results -->
+            <div class="step" id="step4">
+                <div class="step-header">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Results</div>
+                </div>
+                <div class="progress-bar-container" id="progressContainer">
+                    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                    <div class="progress-text" id="progressText">Applying fixes...</div>
+                </div>
+                <div id="resultContainer" style="display:none;">
+                    <div class="success" id="resultMessage" data-testid="text-result-message"></div>
+                    <div class="result-actions">
+                        <button class="btn btn-success" onclick="downloadResult()" data-testid="button-download">
+                            Download Fixed CSV
+                        </button>
+                        <button class="btn btn-primary" onclick="displayResult()" data-testid="button-display">
+                            Display in Browser
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetTool()" data-testid="button-reset">
+                            Start Over
+                        </button>
+                    </div>
+                    <div class="display-table-container" id="displayTableContainer" data-testid="display-table-container"></div>
+                </div>
+            </div>
+
+            <div id="errorContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // ─── State ────────────────────────────────────────────────────────
+        var headers = [];
+        var originalRows = [];
+        var columnIssues = {};
+        var columnFixes = {};
+        var processedHeaders = [];
+        var processedRows = [];
+        var sourceFileName = 'export';
+
+        document.getElementById('csvFile').addEventListener('change', handleFileUpload);
+
+        // ─── IANA Timezone List (common) ──────────────────────────────────
+        var COMMON_TIMEZONES = [
+            'UTC',
+            'America/New_York',
+            'America/Chicago',
+            'America/Denver',
+            'America/Los_Angeles',
+            'America/Anchorage',
+            'Pacific/Honolulu',
+            'Europe/London',
+            'Europe/Berlin',
+            'Europe/Moscow',
+            'Asia/Dubai',
+            'Asia/Kolkata',
+            'Asia/Bangkok',
+            'Asia/Shanghai',
+            'Asia/Tokyo',
+            'Asia/Seoul',
+            'Asia/Singapore',
+            'Australia/Sydney',
+            'Pacific/Auckland'
+        ];
+
+        // ─── Sample Data ──────────────────────────────────────────────────
+
+        function generateSampleCSV() {
+            var h = ['Date_Time','Chain','From','To','Txn_Hash','Asset','Asset_Amnt','USD_Value','Notes','Epoch_Stamp'];
+            var rows = [
+                ['2025-11-15T08:00:00.000Z','TRX','TJYwDem1YQRjvsraPRJ3ELam2yFU6Fe29K','TN1qHhiqCLAfV6AHhBMXGdPX2ZRPGkFLpR','a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2','USDT','25000.000000000000000000','25000.00','Initial transfer ','1731657600'],
+                ['2025-11-15T10:30:00+09:00','TRX','TN1qHhiqCLAfV6AHhBMXGdPX2ZRPGkFLpR','TXo2vGtkzFPnAmGt3RLpqkANxTLCmf6uMF','b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3','USDT','24800.123456789012345678','24800.12',' Layered through CP','1731657600000'],
+                ['11/15/2025 3:00:00 PM','TRX','TXo2vGtkzFPnAmGt3RLpqkANxTLCmf6uMF','TKwMR6N3dMcnhN3fRRGL5oKNzaBy4HPHZF','c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4','USDT','24500.000000000000000000','24500.00','Exchange deposit','1731682800'],
+                ['15/11/2025 18:00:00','TRX','TSfYBYgcuXS6RcMCRJjDeFGr2dXfkQBn5a','TVj7RNVHy6thbM7BWdSe9G6gXwKhjhdNZS','d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5','TRX','150000.000000','12750.00','Gas funding','1731693600'],
+                ['2025-11-16T01:30:00Z','TRX','TVj7RNVHy6thbM7BWdSe9G6gXwKhjhdNZS','TLkFZzDensKjAiMQbcWMeVrOLAhLMUVPMb','e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6','USDT','8500.000000000000000000','8500.00','Traced tx','1731720600'],
+                ['Sat, 15 Nov 2025 20:00:00 +0000','TRX','TG7jQ1PkM2qrzJEhMJYfBpNFy7sMUXdwNA','THPvaUhoh2Qn2y9THCZML3H4PBatRNkFjE','f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7','USDT','100000.000000000000000000','100000.00','  Large movement  ','1731700800'],
+                ['2025-11-17T04:00:00.000Z','TRX','THPvaUhoh2Qn2y9THCZML3H4PBatRNkFjE','TXo2vGtkzFPnAmGt3RLpqkANxTLCmf6uMF','00a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e5f7a9b1c3d5e7f9a1b3c5d7e9f1a3','USDT','95000.000000000000000000','95000.00','Cross-inv link','1731816000'],
+                ['2025-11-17T08:00:00+05:30','TRX','TXo2vGtkzFPnAmGt3RLpqkANxTLCmf6uMF','TNaRAoLUyYEV2uF7GUrzSjRQTU8v5ZJ5VR','a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8','USDT','94000.000000000000000000','94000.00','OKX deposit','1731830400'],
+                ['2025-11-18T02:00:00Z','TRX','TCkdu4rKYMtqr4YR12f38ZLXpgJaBCz6FF','TFQ3Y4NyhwSdYB5NjLXhUqMczg2WHhAFRa','b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9','USDT','50000.000000000000000000','50000.00','New cluster','1731895200'],
+                ['2025-11-18T12:00:00.000Z','TRX','TFQ3Y4NyhwSdYB5NjLXhUqMczg2WHhAFRa','TVj7RNVHy6thbM7BWdSe9G6gXwKhjhdNZS','c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0','USDT','0.000000000000000001','0.00','Dust test','1731931200'],
+                ['','TRX','TDqSquXBgUCLYvYC4XZgrprLK589WkhKza','TFMXUMQx8GeNUjgSEWF2v2dD5fVj6Cha3R','d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1','TRX','1000.000000','85.00','Missing date',''],
+                ['2025-11-19T06:00:00Z','TRX','TPYmHEhy5n8TCEfYGqW2rPxsghSfzghPDn','TQHgMpVntrYt2R4WzXxYFgxAegnQNsHcrL','e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2','USDT','15000.000000000000000000','15000.00','Cross-inv link 2','1731996000'],
+            ];
+            return { headers: h, rows: rows };
+        }
+
+        // ─── CSV Parsing ──────────────────────────────────────────────────
+
+        function parseCSVText(text) {
+            var result = [];
+            var currentRow = [];
+            var currentField = '';
+            var inQuotes = false;
+            var i = 0;
+
+            while (i < text.length) {
+                var ch = text[i];
+                var next = text[i + 1];
+
+                if (ch === '"') {
+                    if (inQuotes && next === '"') {
+                        currentField += '"';
+                        i += 2;
+                        continue;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (ch === ',' && !inQuotes) {
+                    currentRow.push(currentField);
+                    currentField = '';
+                } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
+                    if (currentField || currentRow.length > 0) {
+                        currentRow.push(currentField);
+                        result.push(currentRow);
+                        currentRow = [];
+                        currentField = '';
+                    }
+                    if (ch === '\r' && next === '\n') i++;
+                } else {
+                    currentField += ch;
+                }
+                i++;
+            }
+
+            if (currentField || currentRow.length > 0) {
+                currentRow.push(currentField);
+                result.push(currentRow);
+            }
+
+            return result.filter(function(r) { return r.length > 0; });
+        }
+
+        function csvEscape(value) {
+            if (value == null) return '';
+            var str = String(value);
+            if (str.indexOf(',') !== -1 || str.indexOf('"') !== -1 || str.indexOf('\n') !== -1 || str.indexOf('\r') !== -1) {
+                return '"' + str.replace(/"/g, '""') + '"';
+            }
+            return str;
+        }
+
+        // ─── Issue Detection ──────────────────────────────────────────────
+
+        var DETECTORS = {
+            isoDate: {
+                label: 'ISO 8601 datetime',
+                category: 'date',
+                test: function(v) {
+                    return /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/.test(v.trim());
+                }
+            },
+            usDate: {
+                label: 'US date format (MM/DD/YYYY)',
+                category: 'date',
+                test: function(v) {
+                    return /^\d{1,2}\/\d{1,2}\/\d{4}(\s+\d{1,2}:\d{2}(:\d{2})?\s*(AM|PM)?)?$/i.test(v.trim());
+                }
+            },
+            euDate: {
+                label: 'European date format (DD/MM/YYYY)',
+                category: 'date',
+                test: function(v) {
+                    var m = v.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                    if (!m) return false;
+                    var day = parseInt(m[1], 10);
+                    var month = parseInt(m[2], 10);
+                    return day > 12 && month <= 12;
+                }
+            },
+            rfcDate: {
+                label: 'RFC 2822 datetime',
+                category: 'date',
+                test: function(v) {
+                    return /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s+\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}\s+\d{2}:\d{2}:\d{2}\s*([+-]\d{4}|[A-Z]{2,4})?$/i.test(v.trim());
+                }
+            },
+            epochSeconds: {
+                label: 'Unix epoch (seconds)',
+                category: 'date',
+                test: function(v) {
+                    var s = v.trim();
+                    if (!/^\d{10}$/.test(s)) return false;
+                    var n = parseInt(s, 10);
+                    return n >= 946684800 && n <= 2524608000;
+                }
+            },
+            epochMillis: {
+                label: 'Unix epoch (milliseconds)',
+                category: 'date',
+                test: function(v) {
+                    var s = v.trim();
+                    if (!/^\d{13}$/.test(s)) return false;
+                    var n = parseInt(s, 10);
+                    return n >= 946684800000 && n <= 2524608000000;
+                }
+            },
+            longInteger: {
+                label: 'Long integer (15+ digits, Excel truncation risk)',
+                category: 'number',
+                test: function(v) {
+                    var s = v.trim();
+                    return /^\d{15,}$/.test(s);
+                }
+            },
+            highPrecisionDecimal: {
+                label: 'High-precision decimal (10+ decimal places)',
+                category: 'number',
+                test: function(v) {
+                    var s = v.trim();
+                    var dot = s.indexOf('.');
+                    if (dot === -1) return false;
+                    var dec = s.substring(dot + 1);
+                    return /^\d{10,}$/.test(dec);
+                }
+            },
+            leadingZeroHex: {
+                label: 'Leading-zero string (stripped by Excel)',
+                category: 'number',
+                test: function(v) {
+                    var s = v.trim();
+                    return /^0[0-9a-fA-F]+$/.test(s) && s.length >= 3;
+                }
+            },
+            leadingWhitespace: {
+                label: 'Leading whitespace',
+                category: 'text',
+                test: function(v) {
+                    return v.length > 0 && v !== v.trimStart();
+                }
+            },
+            trailingWhitespace: {
+                label: 'Trailing whitespace',
+                category: 'text',
+                test: function(v) {
+                    return v.length > 0 && v !== v.trimEnd();
+                }
+            }
+        };
+
+        function scanColumn(colIndex) {
+            var issues = {};
+            var samplesByType = {};
+
+            for (var r = 0; r < originalRows.length; r++) {
+                var val = originalRows[r][colIndex];
+                if (val === undefined || val === null || val === '') continue;
+                var str = String(val);
+
+                for (var key in DETECTORS) {
+                    if (DETECTORS[key].test(str)) {
+                        if (!issues[key]) {
+                            issues[key] = { count: 0, detector: DETECTORS[key] };
+                            samplesByType[key] = [];
+                        }
+                        issues[key].count++;
+                        if (samplesByType[key].length < 20) {
+                            samplesByType[key].push({ row: r, value: str });
+                        }
+                    }
+                }
+            }
+
+            if (Object.keys(issues).length === 0) return null;
+
+            return { issues: issues, samples: samplesByType };
+        }
+
+        function scanAllColumns() {
+            columnIssues = {};
+            for (var c = 0; c < headers.length; c++) {
+                var result = scanColumn(c);
+                if (result) {
+                    columnIssues[c] = result;
+                }
+            }
+        }
+
+        // ─── Fix Functions ────────────────────────────────────────────────
+
+        function getFixOptionsForColumn(colIndex) {
+            var info = columnIssues[colIndex];
+            if (!info) return [];
+
+            var hasDate = false, hasNumber = false, hasText = false;
+            for (var key in info.issues) {
+                var cat = info.issues[key].detector.category;
+                if (cat === 'date') hasDate = true;
+                if (cat === 'number') hasNumber = true;
+                if (cat === 'text') hasText = true;
+            }
+
+            var opts = [];
+
+            if (hasDate) {
+                opts.push({ value: 'date_utc_excel', label: 'Convert dates to UTC (Excel-friendly: YYYY-MM-DD HH:MM:SS)' });
+                opts.push({ value: 'date_utc_iso', label: 'Convert dates to UTC (ISO 8601: YYYY-MM-DDTHH:MM:SSZ)' });
+                opts.push({ value: 'date_tz', label: 'Convert dates to specific timezone (Excel-friendly)', needsTimezone: true });
+                opts.push({ value: 'date_us', label: 'Convert dates to US format (MM/DD/YYYY HH:MM:SS)' });
+                opts.push({ value: 'date_eu', label: 'Convert dates to European format (DD/MM/YYYY HH:MM:SS)' });
+            }
+
+            if (hasNumber) {
+                opts.push({ value: 'num_force_text', label: 'Force as text (preserve exact value for Excel)' });
+                opts.push({ value: 'num_truncate15', label: 'Truncate to 15 significant digits' });
+            }
+
+            if (hasText) {
+                opts.push({ value: 'text_trim', label: 'Trim whitespace (leading and trailing)' });
+            }
+
+            opts.push({ value: 'force_text_all', label: 'Force entire column as text (quote all values)' });
+            opts.push({ value: 'skip', label: 'Leave unchanged' });
+
+            return opts;
+        }
+
+        function parseAnyDateToUTC(str) {
+            str = str.trim();
+
+            var m;
+
+            m = str.match(/^(\d{10})$/);
+            if (m) return new Date(parseInt(m[1], 10) * 1000);
+
+            m = str.match(/^(\d{13})$/);
+            if (m) return new Date(parseInt(m[1], 10));
+
+            m = str.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})(\.\d+)?(Z|([+-])(\d{2}):?(\d{2}))?$/);
+            if (m) {
+                var d = new Date(Date.UTC(
+                    parseInt(m[1]),
+                    parseInt(m[2]) - 1,
+                    parseInt(m[3]),
+                    parseInt(m[4]),
+                    parseInt(m[5]),
+                    parseInt(m[6])
+                ));
+                if (m[8] && m[8] !== 'Z') {
+                    var sign = m[9] === '+' ? -1 : 1;
+                    d.setUTCMinutes(d.getUTCMinutes() + sign * (parseInt(m[10]) * 60 + parseInt(m[11])));
+                }
+                return d;
+            }
+
+            m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+            if (m) {
+                var hr = parseInt(m[4], 10);
+                if (m[7]) {
+                    var ampm = m[7].toUpperCase();
+                    if (ampm === 'PM' && hr < 12) hr += 12;
+                    if (ampm === 'AM' && hr === 12) hr = 0;
+                }
+                var first = parseInt(m[1], 10);
+                var second = parseInt(m[2], 10);
+                var year = parseInt(m[3], 10);
+                var month, day;
+                if (first > 12) {
+                    day = first; month = second;
+                } else {
+                    month = first; day = second;
+                }
+                return new Date(Date.UTC(year, month - 1, day, hr, parseInt(m[5]), parseInt(m[6] || '0')));
+            }
+
+            m = str.match(/^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s+(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{4})\s+(\d{2}):(\d{2}):(\d{2})\s*([+-]\d{4})?/i);
+            if (m) {
+                var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+                var dt = new Date(Date.UTC(
+                    parseInt(m[3]), months[m[2]], parseInt(m[1]),
+                    parseInt(m[4]), parseInt(m[5]), parseInt(m[6])
+                ));
+                if (m[7]) {
+                    var offSign = m[7][0] === '+' ? -1 : 1;
+                    var offH = parseInt(m[7].substring(1, 3));
+                    var offM = parseInt(m[7].substring(3, 5));
+                    dt.setUTCMinutes(dt.getUTCMinutes() + offSign * (offH * 60 + offM));
+                }
+                return dt;
+            }
+
+            return null;
+        }
+
+        function formatDateUTCExcel(d) {
+            if (!d || isNaN(d.getTime())) return null;
+            return pad4(d.getUTCFullYear()) + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate()) +
+                   ' ' + pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes()) + ':' + pad2(d.getUTCSeconds());
+        }
+
+        function formatDateUTCISO(d) {
+            if (!d || isNaN(d.getTime())) return null;
+            return d.toISOString().replace(/\.\d{3}Z$/, 'Z');
+        }
+
+        function formatDateTimezone(d, tz) {
+            if (!d || isNaN(d.getTime())) return null;
+            try {
+                var parts = new Intl.DateTimeFormat('en-CA', {
+                    timeZone: tz,
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit',
+                    hour12: false
+                }).formatToParts(d);
+
+                var p = {};
+                parts.forEach(function(x) { p[x.type] = x.value; });
+                return p.year + '-' + p.month + '-' + p.day + ' ' + p.hour + ':' + p.minute + ':' + p.second;
+            } catch (e) {
+                return formatDateUTCExcel(d);
+            }
+        }
+
+        function formatDateUS(d) {
+            if (!d || isNaN(d.getTime())) return null;
+            return pad2(d.getUTCMonth() + 1) + '/' + pad2(d.getUTCDate()) + '/' + pad4(d.getUTCFullYear()) +
+                   ' ' + pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes()) + ':' + pad2(d.getUTCSeconds());
+        }
+
+        function formatDateEU(d) {
+            if (!d || isNaN(d.getTime())) return null;
+            return pad2(d.getUTCDate()) + '/' + pad2(d.getUTCMonth() + 1) + '/' + pad4(d.getUTCFullYear()) +
+                   ' ' + pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes()) + ':' + pad2(d.getUTCSeconds());
+        }
+
+        function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+        function pad4(n) { var s = '' + n; while (s.length < 4) s = '0' + s; return s; }
+
+        function isDateValue(str) {
+            for (var key in DETECTORS) {
+                if (DETECTORS[key].category === 'date' && DETECTORS[key].test(str)) return true;
+            }
+            return false;
+        }
+
+        function isNumberIssue(str) {
+            for (var key in DETECTORS) {
+                if (DETECTORS[key].category === 'number' && DETECTORS[key].test(str)) return true;
+            }
+            return false;
+        }
+
+        function isTextIssue(str) {
+            for (var key in DETECTORS) {
+                if (DETECTORS[key].category === 'text' && DETECTORS[key].test(str)) return true;
+            }
+            return false;
+        }
+
+        function applyFixToValue(val, fixType, param) {
+            if (val === undefined || val === null || val === '') return val;
+            var str = String(val);
+
+            switch (fixType) {
+                case 'date_utc_excel':
+                    if (isDateValue(str)) {
+                        var d = parseAnyDateToUTC(str);
+                        if (d) return formatDateUTCExcel(d);
+                    }
+                    return str;
+
+                case 'date_utc_iso':
+                    if (isDateValue(str)) {
+                        var d2 = parseAnyDateToUTC(str);
+                        if (d2) return formatDateUTCISO(d2);
+                    }
+                    return str;
+
+                case 'date_tz':
+                    if (isDateValue(str)) {
+                        var d3 = parseAnyDateToUTC(str);
+                        if (d3) return formatDateTimezone(d3, param || 'UTC');
+                    }
+                    return str;
+
+                case 'date_us':
+                    if (isDateValue(str)) {
+                        var d4 = parseAnyDateToUTC(str);
+                        if (d4) return formatDateUS(d4);
+                    }
+                    return str;
+
+                case 'date_eu':
+                    if (isDateValue(str)) {
+                        var d5 = parseAnyDateToUTC(str);
+                        if (d5) return formatDateEU(d5);
+                    }
+                    return str;
+
+                case 'num_force_text':
+                    if (isNumberIssue(str)) return "'" + str;
+                    return str;
+
+                case 'num_truncate15':
+                    if (/^\d{15,}$/.test(str.trim())) return str.trim().substring(0, 15);
+                    if (str.trim().indexOf('.') !== -1) {
+                        var parts = str.trim().split('.');
+                        var maxDec = Math.max(0, 15 - parts[0].length - 1);
+                        return parts[0] + '.' + parts[1].substring(0, maxDec);
+                    }
+                    return str;
+
+                case 'text_trim':
+                    return str.trim();
+
+                case 'force_text_all':
+                    return "'" + str;
+
+                case 'skip':
+                default:
+                    return str;
+            }
+        }
+
+        // ─── UI: File Upload ──────────────────────────────────────────────
+
+        function handleFileUpload(event) {
+            var file = event.target.files[0];
+            if (!file) return;
+
+            sourceFileName = file.name.replace(/\.csv$/i, '');
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    var parsed = parseCSVText(e.target.result);
+                    if (parsed.length < 2) {
+                        showError('CSV must have at least a header row and one data row.');
+                        return;
+                    }
+                    headers = parsed[0];
+                    originalRows = parsed.slice(1);
+                    afterLoad(file.name);
+                } catch (err) {
+                    showError('Error parsing CSV: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function loadSampleData() {
+            var sample = generateSampleCSV();
+            headers = sample.headers;
+            originalRows = sample.rows;
+            sourceFileName = 'sample-blockchain-export';
+            afterLoad('sample data (12 rows, mixed date formats, epoch timestamps, high-precision decimals, whitespace issues)');
+        }
+
+        function afterLoad(description) {
+            document.getElementById('fileInfo').textContent = 'Loaded ' + originalRows.length + ' rows with ' + headers.length + ' columns from ' + description;
+            document.getElementById('fileInfo').style.display = 'block';
+
+            document.getElementById('step1').classList.add('completed');
+            document.getElementById('step1').classList.remove('active');
+
+            scanAllColumns();
+            renderScanSummary();
+
+            document.getElementById('step2').classList.add('completed');
+            document.getElementById('step3').classList.add('active');
+
+            columnFixes = {};
+            renderColumnCards();
+        }
+
+        // ─── UI: Scan Summary ─────────────────────────────────────────────
+
+        function renderScanSummary() {
+            var summary = document.getElementById('scanSummary');
+            var flaggedCount = Object.keys(columnIssues).length;
+
+            if (flaggedCount === 0) {
+                summary.innerHTML = '<div class="success">No compatibility issues detected. Your CSV looks clean.</div>';
+                return;
+            }
+
+            var dateCols = 0, numCols = 0, textCols = 0;
+            for (var c in columnIssues) {
+                for (var key in columnIssues[c].issues) {
+                    var cat = columnIssues[c].issues[key].detector.category;
+                    if (cat === 'date') { dateCols++; break; }
+                }
+                for (var key2 in columnIssues[c].issues) {
+                    var cat2 = columnIssues[c].issues[key2].detector.category;
+                    if (cat2 === 'number') { numCols++; break; }
+                }
+                for (var key3 in columnIssues[c].issues) {
+                    var cat3 = columnIssues[c].issues[key3].detector.category;
+                    if (cat3 === 'text') { textCols++; break; }
+                }
+            }
+
+            var html = '<p style="color:#555; margin-bottom:15px;">Found issues in <strong>' + flaggedCount + '</strong> of ' + headers.length + ' columns:</p>';
+
+            if (dateCols > 0) {
+                html += '<div class="issue-category"><h4>Date/Time Issues <span class="issue-count count-warning">' + dateCols + ' column(s)</span></h4>';
+                html += '<span class="issue-detail">Mixed formats, epoch timestamps, timezone offsets, ISO 8601 variants</span></div>';
+            }
+
+            if (numCols > 0) {
+                html += '<div class="issue-category"><h4>Number Issues <span class="issue-count count-warning">' + numCols + ' column(s)</span></h4>';
+                html += '<span class="issue-detail">Long integers, high-precision decimals, leading-zero strings at risk of Excel corruption</span></div>';
+            }
+
+            if (textCols > 0) {
+                html += '<div class="issue-category"><h4>Text Issues <span class="issue-count count-warning">' + textCols + ' column(s)</span></h4>';
+                html += '<span class="issue-detail">Leading/trailing whitespace that can cause silent match failures</span></div>';
+            }
+
+            summary.innerHTML = html;
+        }
+
+        // ─── UI: Column Cards ─────────────────────────────────────────────
+
+        function renderColumnCards() {
+            var container = document.getElementById('columnCards');
+            container.innerHTML = '';
+
+            var flaggedCols = Object.keys(columnIssues);
+            if (flaggedCols.length === 0) {
+                container.innerHTML = '<div class="success">No columns require fixes.</div>';
+                checkAllCommitted();
+                return;
+            }
+
+            document.getElementById('fixDescription').style.display = 'block';
+
+            flaggedCols.forEach(function(colIdx) {
+                container.appendChild(createColumnCard(parseInt(colIdx)));
+            });
+        }
+
+        function createColumnCard(colIndex) {
+            var card = document.createElement('div');
+            card.className = 'column-card';
+            card.id = 'card-' + colIndex;
+
+            var info = columnIssues[colIndex];
+            var colName = headers[colIndex] || ('Column ' + (colIndex + 1));
+
+            var badges = '';
+            var issueListItems = '';
+            for (var key in info.issues) {
+                var det = info.issues[key];
+                var cat = det.detector.category;
+                var badgeClass = cat === 'date' ? 'badge-date' : cat === 'number' ? 'badge-number' : 'badge-text';
+                badges += '<span class="badge ' + badgeClass + '">' + cat.toUpperCase() + '</span>';
+                issueListItems += '<li>' + det.detector.label + ' (' + det.count + ' cells)</li>';
+            }
+
+            var opts = getFixOptionsForColumn(colIndex);
+            var optionsHtml = '<option value="">Choose a fix...</option>';
+            opts.forEach(function(o) {
+                optionsHtml += '<option value="' + o.value + '" data-needs-tz="' + (o.needsTimezone ? 'true' : '') + '">' + o.label + '</option>';
+            });
+
+            var tzOptions = '<option value="UTC">UTC</option>';
+            COMMON_TIMEZONES.forEach(function(tz) {
+                if (tz !== 'UTC') tzOptions += '<option value="' + tz + '">' + tz.replace(/_/g, ' ') + '</option>';
+            });
+
+            var samples = [];
+            for (var sk in info.samples) {
+                info.samples[sk].forEach(function(s) {
+                    if (samples.length < 10) samples.push(s);
+                });
+            }
+
+            var sampleRowsHtml = samples.map(function(s) {
+                return '<tr><td>' + (s.row + 1) + '</td><td>' + escapeHtml(s.value) + '</td></tr>';
+            }).join('');
+
+            card.innerHTML =
+                '<div class="column-card-header">' +
+                    '<span class="column-name">' + escapeHtml(colName) + '</span>' +
+                    '<div class="column-badges">' + badges + '<span class="badge badge-pending" id="status-' + colIndex + '">Pending</span></div>' +
+                '</div>' +
+                '<ul class="issue-list">' + issueListItems + '</ul>' +
+                '<div class="fix-controls" id="controls-' + colIndex + '">' +
+                    '<select class="fix-select" id="select-' + colIndex + '" onchange="onFixChange(' + colIndex + ')" data-testid="select-fix-' + colIndex + '">' + optionsHtml + '</select>' +
+                    '<select class="fix-param" id="tz-' + colIndex + '" style="display:none;" data-testid="select-tz-' + colIndex + '">' + tzOptions + '</select>' +
+                    '<button class="btn btn-commit" id="commit-' + colIndex + '" disabled onclick="commitFix(' + colIndex + ')" data-testid="button-commit-' + colIndex + '">Commit</button>' +
+                    '<button class="btn btn-skip" onclick="skipColumn(' + colIndex + ')" data-testid="button-skip-' + colIndex + '">Skip</button>' +
+                '</div>' +
+                '<div class="preview-grid" id="preview-grid-' + colIndex + '">' +
+                    '<div class="preview-panel">' +
+                        '<div class="preview-label">Before (samples)</div>' +
+                        '<div class="preview-scroll"><table><thead><tr><th>Row</th><th>Value</th></tr></thead><tbody>' + sampleRowsHtml + '</tbody></table></div>' +
+                    '</div>' +
+                    '<div class="preview-panel">' +
+                        '<div class="preview-label after">After (preview)</div>' +
+                        '<div class="preview-scroll"><table><thead><tr><th>Row</th><th>Fixed Value</th></tr></thead><tbody id="after-' + colIndex + '"><tr><td colspan="2" style="text-align:center;color:#999;">Select a fix to preview</td></tr></tbody></table></div>' +
+                    '</div>' +
+                '</div>';
+
+            return card;
+        }
+
+        function onFixChange(colIndex) {
+            var select = document.getElementById('select-' + colIndex);
+            var tzSelect = document.getElementById('tz-' + colIndex);
+            var commitBtn = document.getElementById('commit-' + colIndex);
+            var val = select.value;
+
+            var needsTz = select.selectedOptions[0] && select.selectedOptions[0].getAttribute('data-needs-tz') === 'true';
+            tzSelect.style.display = needsTz ? 'inline-block' : 'none';
+
+            commitBtn.disabled = !val;
+
+            updatePreview(colIndex);
+
+            if (needsTz) {
+                tzSelect.onchange = function() { updatePreview(colIndex); };
+            }
+        }
+
+        function updatePreview(colIndex) {
+            var select = document.getElementById('select-' + colIndex);
+            var tzSelect = document.getElementById('tz-' + colIndex);
+            var afterBody = document.getElementById('after-' + colIndex);
+            var fixType = select.value;
+
+            if (!fixType) {
+                afterBody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:#999;">Select a fix to preview</td></tr>';
+                return;
+            }
+
+            var param = tzSelect.style.display !== 'none' ? tzSelect.value : '';
+            var info = columnIssues[colIndex];
+            var samples = [];
+            for (var sk in info.samples) {
+                info.samples[sk].forEach(function(s) {
+                    if (samples.length < 10) samples.push(s);
+                });
+            }
+
+            var html = samples.map(function(s) {
+                var fixed = applyFixToValue(s.value, fixType, param);
+                var changed = fixed !== s.value;
+                return '<tr><td>' + (s.row + 1) + '</td><td class="' + (changed ? 'changed-cell' : '') + '">' + escapeHtml(fixed) + '</td></tr>';
+            }).join('');
+
+            afterBody.innerHTML = html;
+        }
+
+        function commitFix(colIndex) {
+            var select = document.getElementById('select-' + colIndex);
+            var tzSelect = document.getElementById('tz-' + colIndex);
+            var fixType = select.value;
+            var param = tzSelect.style.display !== 'none' ? tzSelect.value : '';
+
+            columnFixes[colIndex] = { type: fixType, param: param };
+
+            var card = document.getElementById('card-' + colIndex);
+            card.className = 'column-card committed';
+            var status = document.getElementById('status-' + colIndex);
+            status.className = 'badge badge-fixed';
+            status.textContent = fixType === 'skip' ? 'Skipped' : 'Fixed';
+
+            var controls = document.getElementById('controls-' + colIndex);
+            controls.innerHTML = '<span style="color:#1e8449;font-weight:600;">Committed: ' + escapeHtml(select.selectedOptions[0].textContent) + '</span>' +
+                ' <button class="btn btn-undo" onclick="undoFix(' + colIndex + ')" data-testid="button-undo-' + colIndex + '">Undo</button>';
+
+            checkAllCommitted();
+        }
+
+        function skipColumn(colIndex) {
+            columnFixes[colIndex] = { type: 'skip', param: '' };
+
+            var card = document.getElementById('card-' + colIndex);
+            card.className = 'column-card skipped';
+            var status = document.getElementById('status-' + colIndex);
+            status.className = 'badge badge-skipped';
+            status.textContent = 'Skipped';
+
+            var controls = document.getElementById('controls-' + colIndex);
+            controls.innerHTML = '<span style="color:#6c757d;">Left unchanged</span>' +
+                ' <button class="btn btn-undo" onclick="undoFix(' + colIndex + ')" data-testid="button-undo-' + colIndex + '">Undo</button>';
+
+            var previewGrid = document.getElementById('preview-grid-' + colIndex);
+            if (previewGrid) previewGrid.style.display = 'none';
+
+            checkAllCommitted();
+        }
+
+        function undoFix(colIndex) {
+            delete columnFixes[colIndex];
+            var container = document.getElementById('columnCards');
+            var oldCard = document.getElementById('card-' + colIndex);
+            var newCard = createColumnCard(colIndex);
+            container.replaceChild(newCard, oldCard);
+
+            document.getElementById('resultContainer').style.display = 'none';
+            document.getElementById('displayTableContainer').style.display = 'none';
+        }
+
+        function checkAllCommitted() {
+            var total = Object.keys(columnIssues).length;
+            var committed = Object.keys(columnFixes).length;
+
+            if (total > 0 && committed >= total) {
+                document.getElementById('step3').classList.add('completed');
+                document.getElementById('step3').classList.remove('active');
+                document.getElementById('step4').classList.add('active');
+                applyAllFixes();
+            }
+        }
+
+        // ─── Apply Fixes & Generate Output ────────────────────────────────
+
+        function applyAllFixes() {
+            var progressContainer = document.getElementById('progressContainer');
+            var progressFill = document.getElementById('progressFill');
+            var progressText = document.getElementById('progressText');
+            progressContainer.style.display = 'block';
+
+            processedHeaders = headers.slice();
+            processedRows = [];
+
+            var fixCount = 0;
+            var totalCells = 0;
+
+            setTimeout(function() {
+                for (var r = 0; r < originalRows.length; r++) {
+                    var row = originalRows[r].slice();
+                    for (var c = 0; c < row.length; c++) {
+                        if (columnFixes[c] && columnFixes[c].type !== 'skip') {
+                            var original = row[c];
+                            var fixed = applyFixToValue(original, columnFixes[c].type, columnFixes[c].param);
+                            if (fixed !== original) {
+                                row[c] = fixed;
+                                fixCount++;
+                            }
+                        }
+                        totalCells++;
+                    }
+                    processedRows.push(row);
+
+                    if (r % 50 === 0) {
+                        var pct = ((r / originalRows.length) * 100).toFixed(0);
+                        progressFill.style.width = pct + '%';
+                        progressText.textContent = 'Processing row ' + r + ' of ' + originalRows.length + '...';
+                    }
+                }
+
+                progressFill.style.width = '100%';
+                progressText.textContent = 'Complete';
+
+                setTimeout(function() {
+                    progressContainer.style.display = 'none';
+                    var fixedCols = Object.keys(columnFixes).filter(function(k) { return columnFixes[k].type !== 'skip'; }).length;
+                    var skippedCols = Object.keys(columnFixes).filter(function(k) { return columnFixes[k].type === 'skip'; }).length;
+                    document.getElementById('resultMessage').textContent =
+                        'Applied ' + fixCount + ' cell changes across ' + fixedCols + ' column(s). ' + skippedCols + ' column(s) left unchanged. ' + processedRows.length + ' rows ready.';
+                    document.getElementById('resultContainer').style.display = 'block';
+                }, 300);
+            }, 100);
+        }
+
+        // ─── Download ─────────────────────────────────────────────────────
+
+        function downloadResult() {
+            var BOM = '\uFEFF';
+            var csv = BOM + processedHeaders.map(csvEscape).join(',') + '\n';
+            processedRows.forEach(function(row) {
+                csv += row.map(csvEscape).join(',') + '\n';
+            });
+
+            var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement('a');
+            var url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', sourceFileName + '-fixed.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            showSuccess('Downloaded: ' + sourceFileName + '-fixed.csv');
+        }
+
+        // ─── Display In Browser ───────────────────────────────────────────
+
+        function displayResult() {
+            var container = document.getElementById('displayTableContainer');
+            container.innerHTML = '';
+
+            var table = document.createElement('table');
+            table.className = 'display-table';
+
+            var thead = document.createElement('thead');
+            var headerRow = document.createElement('tr');
+            processedHeaders.forEach(function(h) {
+                var th = document.createElement('th');
+                th.textContent = h;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            var tbody = document.createElement('tbody');
+            var displayRows = processedRows.slice(0, 500);
+            displayRows.forEach(function(row, ridx) {
+                var tr = document.createElement('tr');
+                row.forEach(function(cell, cidx) {
+                    var td = document.createElement('td');
+                    var val = cell || '';
+                    td.textContent = val;
+                    td.title = val;
+
+                    if (columnFixes[cidx] && columnFixes[cidx].type !== 'skip') {
+                        var orig = originalRows[ridx] ? originalRows[ridx][cidx] : '';
+                        if (val !== orig) {
+                            td.style.background = '#d5f5e3';
+                            td.style.fontWeight = '500';
+                        }
+                    }
+
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+
+            container.appendChild(table);
+
+            if (processedRows.length > 500) {
+                var notice = document.createElement('p');
+                notice.style.padding = '10px';
+                notice.style.color = '#666';
+                notice.style.fontSize = '0.85em';
+                notice.textContent = 'Showing first 500 of ' + processedRows.length + ' rows. Download for complete data.';
+                container.appendChild(notice);
+            }
+
+            container.style.display = 'block';
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // ─── Reset ────────────────────────────────────────────────────────
+
+        function resetTool() {
+            headers = [];
+            originalRows = [];
+            columnIssues = {};
+            columnFixes = {};
+            processedHeaders = [];
+            processedRows = [];
+            sourceFileName = 'export';
+
+            document.getElementById('csvFile').value = '';
+            document.getElementById('fileInfo').style.display = 'none';
+            document.getElementById('scanSummary').innerHTML = '';
+            document.getElementById('columnCards').innerHTML = '';
+            document.getElementById('fixDescription').style.display = 'none';
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('resultContainer').style.display = 'none';
+            document.getElementById('displayTableContainer').style.display = 'none';
+            document.getElementById('errorContainer').innerHTML = '';
+
+            document.querySelectorAll('.step').forEach(function(s) {
+                s.classList.remove('active', 'completed');
+            });
+            document.getElementById('step1').classList.add('active');
+        }
+
+        // ─── Helpers ──────────────────────────────────────────────────────
+
+        function showError(msg) {
+            document.getElementById('errorContainer').innerHTML = '<div class="error">' + msg + '</div>';
+            setTimeout(function() { document.getElementById('errorContainer').innerHTML = ''; }, 5000);
+        }
+
+        function showSuccess(msg) {
+            document.getElementById('errorContainer').innerHTML = '<div class="success">' + msg + '</div>';
+            setTimeout(function() { document.getElementById('errorContainer').innerHTML = ''; }, 4000);
+        }
+
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
